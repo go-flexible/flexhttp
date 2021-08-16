@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/go-flexible/flex"
 	"github.com/go-flexible/flexhttp"
 )
 
@@ -25,8 +24,5 @@ func main() {
 		IdleTimeout:       time.Second,
 	}
 
-	flex.MustStart(
-		context.Background(),
-		flexhttp.New(srv),
-	)
+	flexhttp.New(srv).Run(context.Background())
 }
