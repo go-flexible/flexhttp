@@ -26,7 +26,7 @@ var (
 		ReadHeaderTimeout: DefaultReadHeaderTimeout,
 	}
 
-	// logger defines a logger with a prefix
+	// logger defines a logger with a prefix.
 	logger = log.New(os.Stderr, "flexhttp: ", 0)
 )
 
