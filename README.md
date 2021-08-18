@@ -1,6 +1,7 @@
 # flexhttp
 
 <a href="https://pkg.go.dev/github.com/go-flexible/flexhttp"><img src="https://pkg.go.dev/badge/github.com/go-flexible/flexhttp.svg" alt="Go Reference"></a>
+[![Go](https://github.com/go-flexible/flexhttp/actions/workflows/go.yml/badge.svg?branch=main)](https://github.com/go-flexible/flexhttp/actions/workflows/go.yml)
 
 A [flex](https://github.com/go-flexible/flex) compatible http server.
 
