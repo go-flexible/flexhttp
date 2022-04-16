@@ -1,10 +1,14 @@
 package flexhttp_test
 
 import (
+	"bytes"
 	"context"
+	"io"
+	"log"
 	"net/http"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -12,7 +16,7 @@ import (
 )
 
 var (
-	handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 	ctx context.Context
@@ -38,8 +42,8 @@ func Example() {
 
 func TestNewHTTPServer(t *testing.T) {
 	testcases := []struct {
-		name            string
 		srv             *http.Server
+		name            string
 		expectedTimeout time.Duration
 	}{
 		{
@@ -81,12 +85,40 @@ func TestNewHTTPServer(t *testing.T) {
 	}
 }
 
+func TestOption_WithLogger(t *testing.T) {
+	var buf bytes.Buffer
+
+	w := io.MultiWriter(&buf, os.Stderr)     // so we get console output.
+	logger := log.New(w, "TEST_LOGGER: ", 0) // so we get consistent output.
+
+	metrics := flexhttp.New(
+		&http.Server{},
+		flexhttp.WithLogger(logger),
+	)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	go func() {
+		_ = metrics.Run(ctx)
+	}()
+	_ = metrics.Halt(ctx)
+
+	t.Log(buf.String())
+
+	// ugly? yes, but, it will do.
+	if !strings.Contains(buf.String(), "TEST_LOGGER: ") {
+		t.Fatal("expected log message to contain prefix")
+	}
+}
+
 func equal(t *testing.T, got, want interface{}) {
 	t.Helper()
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("got: %#[1]v (%[1]T), but wanted: %#[2]v (%[2]T)", got, want)
 	}
 }
+
 func notEqual(t *testing.T, got, want interface{}) {
 	t.Helper()
 	if reflect.DeepEqual(got, want) {

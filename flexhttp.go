@@ -2,10 +2,8 @@ package flexhttp
 
 import (
 	"context"
-	"log"
 	"net"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -17,21 +15,34 @@ const (
 	DefaultReadHeaderTimeout = 1 * time.Second
 )
 
-var (
-	// DefaultHTTPServer provides a default http server.
-	DefaultHTTPServer = &http.Server{
-		WriteTimeout:      DefaultWriteTimeout,
-		ReadTimeout:       DefaultReadTimeout,
-		IdleTimeout:       DefaultIdleTimeout,
-		ReadHeaderTimeout: DefaultReadHeaderTimeout,
-	}
+// DefaultHTTPServer provides a default http server.
+var DefaultHTTPServer = &http.Server{
+	WriteTimeout:      DefaultWriteTimeout,
+	ReadTimeout:       DefaultReadTimeout,
+	IdleTimeout:       DefaultIdleTimeout,
+	ReadHeaderTimeout: DefaultReadHeaderTimeout,
+}
 
-	// logger defines a logger with a prefix.
-	logger = log.New(os.Stderr, "flexhttp: ", 0)
-)
+// Logger defines any logger able to call Printf.
+type Logger interface {
+	Printf(format string, v ...interface{})
+}
+
+// Option is a type of func that allows you change defaults of the *Server.
+type Option func(s *Server)
+
+// WithLogger allows you to set a logger for the server.
+func WithLogger(logger Logger) Option {
+	return func(s *Server) {
+		s.logger = logger
+	}
+}
 
 // Server defines the flexhttp Server.
-type Server struct{ *http.Server }
+type Server struct {
+	logger Logger
+	*http.Server
+}
 
 // New returns a new flexhttp server, using the provided http.Server.
 // NOTE: If no values are provided, defaults will be used the following fields:
@@ -39,23 +50,30 @@ type Server struct{ *http.Server }
 //  - ReadHeaderTimeout
 //  - WriteTimeout
 //  - IdleTimeout
-func New(server *http.Server) *Server {
-	if server == nil {
-		server = DefaultHTTPServer
+func New(httpServer *http.Server, options ...Option) *Server {
+	if httpServer == nil {
+		httpServer = DefaultHTTPServer
 	}
-	if server.ReadTimeout == 0 {
-		server.ReadTimeout = DefaultHTTPServer.ReadTimeout
+	if httpServer.ReadTimeout == 0 {
+		httpServer.ReadTimeout = DefaultHTTPServer.ReadTimeout
 	}
-	if server.ReadHeaderTimeout == 0 {
-		server.ReadHeaderTimeout = DefaultHTTPServer.ReadHeaderTimeout
+	if httpServer.ReadHeaderTimeout == 0 {
+		httpServer.ReadHeaderTimeout = DefaultHTTPServer.ReadHeaderTimeout
 	}
-	if server.WriteTimeout == 0 {
-		server.WriteTimeout = DefaultHTTPServer.WriteTimeout
+	if httpServer.WriteTimeout == 0 {
+		httpServer.WriteTimeout = DefaultHTTPServer.WriteTimeout
 	}
-	if server.IdleTimeout == 0 {
-		server.IdleTimeout = DefaultHTTPServer.IdleTimeout
+	if httpServer.IdleTimeout == 0 {
+		httpServer.IdleTimeout = DefaultHTTPServer.IdleTimeout
 	}
-	return &Server{Server: server}
+
+	server := &Server{Server: httpServer}
+
+	for _, opt := range options {
+		opt(server)
+	}
+
+	return server
 }
 
 // Run satisfies the flex Runner interface.
@@ -65,13 +83,13 @@ func (s *Server) Run(_ context.Context) error {
 		return err
 	}
 	if address, ok := listener.Addr().(*net.TCPAddr); ok {
-		logger.Printf("serving on http://%s", address)
+		s.logger.Printf("serving on http://%s", address)
 	}
 	return s.Serve(listener)
 }
 
 // Halt satisfies the flex Halter interface.
 func (s *Server) Halt(ctx context.Context) error {
-	logger.Printf("shutting down http server...")
+	s.logger.Printf("shutting down http server...")
 	return s.Shutdown(ctx)
 }
