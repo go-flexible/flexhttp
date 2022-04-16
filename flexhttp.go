@@ -28,7 +28,7 @@ type Logger interface {
 	Printf(format string, v ...interface{})
 }
 
-// Option is a type of func that allows you change defaults of the *Server
+// Option is a type of func that allows you change defaults of the *Server.
 type Option func(s *Server)
 
 // WithLogger allows you to set a logger for the server.

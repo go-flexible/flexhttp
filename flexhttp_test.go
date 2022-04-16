@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 	ctx context.Context
@@ -42,8 +42,8 @@ func Example() {
 
 func TestNewHTTPServer(t *testing.T) {
 	testcases := []struct {
-		name            string
 		srv             *http.Server
+		name            string
 		expectedTimeout time.Duration
 	}{
 		{
