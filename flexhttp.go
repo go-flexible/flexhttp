@@ -2,8 +2,10 @@ package flexhttp
 
 import (
 	"context"
+	"log"
 	"net"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -67,7 +69,10 @@ func New(httpServer *http.Server, options ...Option) *Server {
 		httpServer.IdleTimeout = DefaultHTTPServer.IdleTimeout
 	}
 
-	server := &Server{Server: httpServer}
+	server := &Server{
+		Server: httpServer,
+		logger: log.New(os.Stdout, "flexhttp: ", log.LstdFlags),
+	}
 
 	for _, opt := range options {
 		opt(server)
